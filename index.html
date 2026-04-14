@@ -9,7 +9,7 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--bg); text-align: center; }
         header { background-color: var(--ss-yellow); padding: 25px; font-weight: bold; font-size: 1.5em; border-bottom: 12px solid var(--ss-blue); }
         .container { max-width: 500px; margin: 40px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 18px; border: 2px solid #ddd; border-radius: 4px; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 20px; outline-color: var(--ss-blue); }
+        input { width: 100%; padding: 18px; border: 2px solid #ddd; border-radius: 4px; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 20px; }
         .btn { width: 100%; padding: 18px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 16px; display: block; text-decoration: none; }
         .btn-validate { background-color: var(--ss-yellow); color: #000; }
         .btn-download { background-color: #c00; color: white; margin-top: 20px; display: none; }
@@ -24,14 +24,14 @@
     <div id="searchArea">
         <h1>Autenticação</h1>
         <p>Introduza o código para validar o documento.</p>
-        <input type="text" id="codigo" placeholder="Digite o código aqui" autocomplete="off" onkeydown="if(event.key==='Enter') validate()">
+        <input type="text" id="codigo" placeholder="Digite o código aqui" autocomplete="off">
         <button type="button" class="btn btn-validate" onclick="validate()">Validar Documento</button>
-        <p id="errorArea">Código inválido ou ficheiro não encontrado.</p>
+        <p id="errorArea">Código inválido ou ficheiro ainda não processado.</p>
     </div>
 
     <div id="resultArea" style="display: none;">
         <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; font-weight: bold; margin-bottom: 20px;">✓ DOCUMENTO AUTÊNTICO</div>
-        <p>Código Verificado: <span id="res-code" style="font-weight: bold;"></span></p>
+        <p>Código: <span id="res-code" style="font-weight: bold;"></span></p>
         <a href="#" id="pdfLink" class="btn btn-download" target="_blank">ABRIR DOCUMENTO ORIGINAL</a>
         <button onclick="window.location.reload()" style="background:none; border:none; color:blue; cursor:pointer; text-decoration:underline; margin-top:20px;">Validar outro</button>
     </div>
@@ -40,6 +40,7 @@
 <script>
     const PDF_BASE = "https://engstrodrigo-bot.github.io/portal-seg.com-1/";
 
+    // Lista de códigos permitidos (conforme os seus ficheiros carregados)
     const permitidos = [
         "13-5mfs-9rdx-btv8-0",
         "14-3kwp-1n8j-mds6-2",
@@ -59,25 +60,33 @@
         const errorArea = document.getElementById('errorArea');
         const pdfLink = document.getElementById('pdfLink');
 
-        errorArea.style.display = 'none';
-
         if (!permitidos.includes(input)) {
-            errorArea.innerText = 'Código inválido ou não autorizado.';
             errorArea.style.display = 'block';
             return;
         }
 
-        const url = PDF_BASE + input + ".pdf";
-        const check = await fetch(url, { method: 'HEAD' });
+        // TÉCNICA SÉNIOR: Tenta as 3 possibilidades de nome de ficheiro que podem estar no GitHub
+        const opcoes = [PDF_BASE + input + ".pdf", PDF_BASE + input + ".pdf.pdf", PDF_BASE + input];
+        let urlFinal = "";
 
-        if (check.ok) {
+        for (let teste of opcoes) {
+            const resp = await fetch(teste, { method: 'HEAD' });
+            if (resp.ok) {
+                urlFinal = teste;
+                break;
+            }
+        }
+
+        if (urlFinal !== "") {
             document.getElementById('searchArea').style.display = 'none';
             document.getElementById('resultArea').style.display = 'block';
             document.getElementById('res-code').innerText = input;
-            pdfLink.href = url + "?v=" + new Date().getTime();
+            
+            // Adiciona timestamp para limpar o cache (forçar o ficheiro novo)
+            pdfLink.href = urlFinal + "?v=" + new Date().getTime();
             pdfLink.style.display = 'block';
         } else {
-            errorArea.innerText = "Ficheiro não encontrado. Tente novamente em alguns minutos.";
+            errorArea.innerText = "Ficheiro não encontrado no servidor. Verifique o nome no GitHub.";
             errorArea.style.display = 'block';
         }
     }
