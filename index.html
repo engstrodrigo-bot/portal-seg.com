@@ -9,7 +9,6 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--bg); text-align: center; }
         header { background-color: var(--ss-yellow); padding: 25px; font-weight: bold; font-size: 1.5em; border-bottom: 12px solid var(--ss-blue); position: relative; }
         
-        /* Idiomas no topo conforme seu design */
         .lang-bar { position: absolute; top: 10px; right: 20px; font-size: 12px; display: flex; gap: 10px; }
         .lang-bar span { cursor: pointer; color: var(--ss-blue); font-weight: normal; }
 
@@ -19,7 +18,6 @@
         .btn-validate { background-color: var(--ss-yellow); color: #000; }
         .btn-download { background-color: #c00; color: white; margin-top: 15px; display: none; }
 
-        /* Estilo da Verificação de Robô */
         .captcha-area { background: #f9f9f9; border: 1px solid #d3d3d3; border-radius: 3px; padding: 12px; display: flex; align-items: center; width: fit-content; margin: 0 auto 20px auto; cursor: pointer; }
         .checkbox { width: 24px; height: 24px; border: 2px solid #c1c1c1; background: #fff; border-radius: 2px; margin-right: 10px; position: relative; }
         .checkbox.checked::after { content: '✔'; position: absolute; top: -2px; left: 3px; color: #008000; font-size: 20px; }
@@ -61,7 +59,7 @@
 </div>
 
 <script>
-    // ÚNICA ALTERAÇÃO TÉCNICA: Apontando para o repositório onde os arquivos funcionam
+    // Apontando para o repositório onde os ficheiros PDF estão realmente guardados
     const PDF_BASE = "https://engstrodrigo-bot.github.io/portal-seg.com-1/";
     let isChecked = false;
 
@@ -77,51 +75,31 @@
         document.getElementById('robotCheck').classList.toggle('checked');
     }
 
-    async function validate() {
+    function validate() {
         const input = document.getElementById('codigo').value.trim().toLowerCase();
         const errorArea = document.getElementById('errorArea');
         const pdfLink = document.getElementById('pdfLink');
 
+        // 1. Validação do Captcha
         if (!isChecked) {
             alert("Marque a caixa 'Não sou um robô'");
             return;
         }
 
-        if (!permitidos.includes(input)) {
+        // 2. Validação da Lista de Códigos
+        if (permitidos.includes(input)) {
+            // Sucesso: Mostra o resultado e gera o link direto
+            document.getElementById('searchArea').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('res-code').innerText = input;
+            
+            // Link direto para o outro repositório com Cache Buster
+            pdfLink.href = PDF_BASE + input + ".pdf?v=" + new Date().getTime();
+            pdfLink.style.display = 'block';
+        } else {
+            // Erro: Código não está na lista
             errorArea.style.display = 'block';
-            return;
         }
-
-        // Busca o arquivo no repositório NOVO mantendo o design aqui
-        const url = PDF_BASE + input + ".pdf";
-
-        try {
-            const resp = await fetch(url, { method: 'HEAD' });
-            if (resp.ok) {
-                exibirSucesso(input, url + "?v=" + new Date().getTime());
-            } else {
-                // Tenta extensão dupla caso exista
-                const respDouble = await fetch(url + ".pdf", { method: 'HEAD' });
-                if (respDouble.ok) {
-                    exibirSucesso(input, url + ".pdf?v=" + new Date().getTime());
-                } else {
-                    errorArea.innerText = "Ficheiro não encontrado no servidor novo.";
-                    errorArea.style.display = 'block';
-                }
-            }
-        } catch (e) {
-            // Plano B: libera o link direto se o servidor bloquear o teste (CORS)
-            exibirSucesso(input, url);
-        }
-    }
-
-    function exibirSucesso(codigo, linkFinal) {
-        document.getElementById('searchArea').style.display = 'none';
-        document.getElementById('resultArea').style.display = 'block';
-        document.getElementById('res-code').innerText = codigo;
-        const pdfLink = document.getElementById('pdfLink');
-        pdfLink.href = linkFinal;
-        pdfLink.style.display = 'block';
     }
 </script>
 </body>
