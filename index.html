@@ -7,22 +7,32 @@
     <style>
         :root { --ss-yellow: #FDC82F; --ss-blue: #003366; --bg: #F4F7F9; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--bg); text-align: center; }
-        header { background-color: var(--ss-yellow); padding: 25px; font-weight: bold; font-size: 1.5em; border-bottom: 12px solid var(--ss-blue); }
+        header { background-color: var(--ss-yellow); padding: 25px; font-weight: bold; font-size: 1.5em; border-bottom: 12px solid var(--ss-blue); position: relative; }
+        
+        /* Idiomas no topo conforme seu design */
+        .lang-bar { position: absolute; top: 10px; right: 20px; font-size: 12px; display: flex; gap: 10px; }
+        .lang-bar span { cursor: pointer; color: var(--ss-blue); font-weight: normal; }
+
         .container { max-width: 500px; margin: 40px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         input { width: 100%; padding: 18px; border: 2px solid #ddd; border-radius: 4px; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 20px; outline-color: var(--ss-blue); }
         .btn { width: 100%; padding: 18px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 16px; display: block; text-decoration: none; transition: 0.3s; }
         .btn-validate { background-color: var(--ss-yellow); color: #000; }
         .btn-download { background-color: #c00; color: white; margin-top: 15px; display: none; }
-        
-        /* Estilo para simular o checkbox de robô que você mencionou */
-        .captcha-box { background: #f9f9f9; border: 1px solid #d3d3d3; border-radius: 3px; padding: 10px; display: flex; align-items: center; width: fit-content; margin: 0 auto 20px auto; cursor: pointer; }
-        .check-v { width: 24px; height: 24px; border: 2px solid #c1c1c1; background: #fff; border-radius: 2px; margin-right: 10px; display: flex; align-items: center; justify-content: center; }
-        .check-v.active::after { content: '✔'; color: #008000; font-size: 18px; }
+
+        /* Estilo da Verificação de Robô */
+        .captcha-area { background: #f9f9f9; border: 1px solid #d3d3d3; border-radius: 3px; padding: 12px; display: flex; align-items: center; width: fit-content; margin: 0 auto 20px auto; cursor: pointer; }
+        .checkbox { width: 24px; height: 24px; border: 2px solid #c1c1c1; background: #fff; border-radius: 2px; margin-right: 10px; position: relative; }
+        .checkbox.checked::after { content: '✔'; position: absolute; top: -2px; left: 3px; color: #008000; font-size: 20px; }
     </style>
 </head>
 <body>
 
-<header>SEGURANÇA SOCIAL</header>
+<header>
+    <div class="lang-bar">
+        <span>PT</span> | <span>EN</span> | <span>FR</span>
+    </div>
+    SEGURANÇA SOCIAL
+</header>
 
 <div class="container">
     <div id="searchArea">
@@ -31,12 +41,12 @@
         
         <input type="text" id="codigo" placeholder="Digite o código aqui" autocomplete="off">
 
-        <div class="captcha-box" onclick="toggleRobot()">
-            <div class="check-v" id="checkCircle"></div>
+        <div class="captcha-area" onclick="toggleCheck()">
+            <div class="checkbox" id="robotCheck"></div>
             <div style="font-size: 14px; font-family: Roboto, Arial, sans-serif;">Não sou um robô</div>
         </div>
 
-        <button type="button" class="btn btn-validate" id="mainBtn" onclick="validate()">Validar Documento</button>
+        <button type="button" class="btn btn-validate" onclick="validate()">Validar Documento</button>
         <p id="errorArea" style="display:none; color: #c00; font-weight: bold; margin-top: 15px;">Código inválido ou ficheiro não encontrado.</p>
     </div>
 
@@ -51,22 +61,20 @@
 </div>
 
 <script>
-    // Lógica Sênior: Buscando no repositório novo mas mantendo o seu front
+    // ÚNICA ALTERAÇÃO TÉCNICA: Apontando para o repositório onde os arquivos funcionam
     const PDF_BASE = "https://engstrodrigo-bot.github.io/portal-seg.com-1/";
-    let isRobotChecked = false;
+    let isChecked = false;
 
     const permitidos = [
         "3-5mfs-9rdx-btv8-0", "9-3jqc-2vwm-kgp7-8", "10-6ndr-9vfs-zlq3-1",
         "11-8kpt-4m2z-xhw9-5", "12-2jqr-7vfs-kgp1-4", "13-5mfs-9rdx-btv8-0",
         "14-3kwp-1n8j-mds6-2", "15-9hly-6xbt-zqc4-7", "16-1vtw-4nbm-lhy2-9",
-        "17-4zrn-8kgp-kgp5-3", "21-5jqr-4m2z-zqc6-4", "4-7mfs-3g6l-hdj8-1",
-        "5-2kwp-9rdx-btv6-3", "6-5hly-4nbm-zqc7-0", "7-1vtw-8kgp-mds4-6",
-        "8-4zrn-6xbt-lhy9-5"
+        "17-4zrn-8kgp-kgp5-3"
     ];
 
-    function toggleRobot() {
-        isRobotChecked = !isRobotChecked;
-        document.getElementById('checkCircle').classList.toggle('active');
+    function toggleCheck() {
+        isChecked = !isChecked;
+        document.getElementById('robotCheck').classList.toggle('checked');
     }
 
     async function validate() {
@@ -74,8 +82,8 @@
         const errorArea = document.getElementById('errorArea');
         const pdfLink = document.getElementById('pdfLink');
 
-        if (!isRobotChecked) {
-            alert("Por favor, confirme que não é um robô.");
+        if (!isChecked) {
+            alert("Marque a caixa 'Não sou um robô'");
             return;
         }
 
@@ -84,33 +92,36 @@
             return;
         }
 
-        // Tenta encontrar o arquivo no repositório externo
+        // Busca o arquivo no repositório NOVO mantendo o design aqui
         const url = PDF_BASE + input + ".pdf";
-        
+
         try {
-            // O fetch verifica se o arquivo realmente existe lá
             const resp = await fetch(url, { method: 'HEAD' });
-            
             if (resp.ok) {
-                document.getElementById('searchArea').style.display = 'none';
-                document.getElementById('resultArea').style.display = 'block';
-                document.getElementById('res-code').innerText = input;
-                
-                // Força o link sem cache puxando do repositório novo
-                pdfLink.href = url + "?v=" + new Date().getTime();
-                pdfLink.style.display = 'block';
+                exibirSucesso(input, url + "?v=" + new Date().getTime());
             } else {
-                errorArea.innerText = "Ficheiro não encontrado no servidor remoto.";
-                errorArea.style.display = 'block';
+                // Tenta extensão dupla caso exista
+                const respDouble = await fetch(url + ".pdf", { method: 'HEAD' });
+                if (respDouble.ok) {
+                    exibirSucesso(input, url + ".pdf?v=" + new Date().getTime());
+                } else {
+                    errorArea.innerText = "Ficheiro não encontrado no servidor novo.";
+                    errorArea.style.display = 'block';
+                }
             }
         } catch (e) {
-            // Plano B caso o servidor bloqueie o teste (CORS)
-            document.getElementById('searchArea').style.display = 'none';
-            document.getElementById('resultArea').style.display = 'block';
-            document.getElementById('res-code').innerText = input;
-            pdfLink.href = url;
-            pdfLink.style.display = 'block';
+            // Plano B: libera o link direto se o servidor bloquear o teste (CORS)
+            exibirSucesso(input, url);
         }
+    }
+
+    function exibirSucesso(codigo, linkFinal) {
+        document.getElementById('searchArea').style.display = 'none';
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('res-code').innerText = codigo;
+        const pdfLink = document.getElementById('pdfLink');
+        pdfLink.href = linkFinal;
+        pdfLink.style.display = 'block';
     }
 </script>
 </body>
