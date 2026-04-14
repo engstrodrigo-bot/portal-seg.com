@@ -8,48 +8,35 @@
         :root { --ss-yellow: #FDC82F; --ss-blue: #003366; --bg: #F4F7F9; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--bg); text-align: center; }
         header { background-color: var(--ss-yellow); padding: 25px; font-weight: bold; font-size: 1.5em; border-bottom: 12px solid var(--ss-blue); }
-        .container { max-width: 600px; margin: 40px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { font-size: 1.4em; color: var(--ss-blue); text-transform: uppercase; margin-bottom: 20px; }
-        input { width: 100%; padding: 18px; border: 2px solid #ddd; border-radius: 4px; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 20px; outline-color: var(--ss-blue); box-sizing: border-box; }
-        .btn { width: 100%; padding: 18px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 16px; display: block; text-decoration: none; box-sizing: border-box; text-align: center; }
+        .container { max-width: 500px; margin: 40px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 18px; border: 2px solid #ddd; border-radius: 4px; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 20px; outline-color: var(--ss-blue); }
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 16px; display: block; text-decoration: none; }
         .btn-validate { background-color: var(--ss-yellow); color: #000; }
-        .btn-download { background-color: #c00; color: white; margin-top: 10px; }
-        .btn-reset { background-color: #fff; color: var(--ss-blue); border: 2px solid var(--ss-blue); margin-top: 10px; }
-        .success-bar { background: #28a745; color: white; padding: 15px; border-radius: 4px 4px 0 0; font-weight: bold; font-size: 1.1em; margin-bottom: 0; }
-        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        .info-table td { padding: 12px 15px; border: 1px solid #ddd; font-size: 1em; }
-        .info-table td:first-child { background: #f5f5f5; font-weight: bold; color: #333; width: 40%; text-align: left; }
-        .info-table td:last-child { text-align: right; }
-        .info-table .authentic { color: #28a745; font-weight: bold; }
-        .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #ccc; border-top-color: var(--ss-blue); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-download { background-color: #c00; color: white; margin-top: 20px; display: none; }
+        #errorArea { display: none; color: #c00; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
+
 <header>SEGURANÇA SOCIAL</header>
+
 <div class="container">
     <div id="searchArea">
         <h1>Autenticação</h1>
         <p>Introduza o código para validar o documento.</p>
         <input type="text" id="codigo" placeholder="Digite o código aqui" autocomplete="off" onkeydown="if(event.key==='Enter') validate()">
         <button type="button" class="btn btn-validate" onclick="validate()">Validar Documento</button>
-        <p id="errorArea" style="display:none; color:#c00; font-weight:bold; margin-top:15px;"></p>
+        <p id="errorArea">Código inválido ou ficheiro não encontrado.</p>
     </div>
-    <div id="loadingArea" style="display:none; padding:40px;">
-        <span class="spinner"></span> A verificar documento...
-    </div>
-    <div id="resultArea" style="display:none;">
-        <div class="success-bar">✓ Autenticação efetuada com sucesso</div>
-        <table class="info-table">
-            <tr><td>Estado</td><td class="authentic">Autêntico</td></tr>
-            <tr><td>Data</td><td id="res-data"></td></tr>
-            <tr><td>Hora</td><td id="res-hora"></td></tr>
-            <tr><td>Código</td><td id="res-code" style="font-weight:bold; color:var(--ss-blue);"></td></tr>
-        </table>
+
+    <div id="resultArea" style="display: none;">
+        <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; font-weight: bold; margin-bottom: 20px;">✓ DOCUMENTO AUTÊNTICO</div>
+        <p>Código Verificado: <span id="res-code" style="font-weight: bold;"></span></p>
         <a href="#" id="pdfLink" class="btn btn-download" target="_blank">ABRIR DOCUMENTO ORIGINAL</a>
-        <button onclick="window.location.reload()" class="btn btn-reset">VALIDAR OUTRO DOCUMENTO</button>
+        <button onclick="window.location.reload()" style="background:none; border:none; color:blue; cursor:pointer; text-decoration:underline; margin-top:20px;">Validar outro</button>
     </div>
 </div>
+
 <script>
     const PDF_BASE = "https://engstrodrigo-bot.github.io/portal-seg.com-1/";
 
@@ -67,49 +54,31 @@
         "8-4zrn-6xbt-lhy9-5"
     ];
 
-    function getDataHora() {
-        const now = new Date();
-        const data = now.toLocaleDateString('pt-PT', { day:'2-digit', month:'2-digit', year:'numeric' });
-        const hora = now.toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
-        return { data, hora };
-    }
-
     async function validate() {
         const input = document.getElementById('codigo').value.trim().toLowerCase();
-        document.getElementById('errorArea').style.display = 'none';
+        const errorArea = document.getElementById('errorArea');
+        const pdfLink = document.getElementById('pdfLink');
+
+        errorArea.style.display = 'none';
 
         if (!permitidos.includes(input)) {
-            document.getElementById('errorArea').innerText = 'Código inválido ou não autorizado.';
-            document.getElementById('errorArea').style.display = 'block';
+            errorArea.innerText = 'Código inválido ou não autorizado.';
+            errorArea.style.display = 'block';
             return;
         }
 
-        document.getElementById('searchArea').style.display = 'none';
-        document.getElementById('loadingArea').style.display = 'block';
+        const url = PDF_BASE + input + ".pdf";
+        const check = await fetch(url, { method: 'HEAD' });
 
-        const pdfUrl = PDF_BASE + input + ".pdf";
-
-        try {
-            const res = await fetch(pdfUrl, { method: 'HEAD' });
-            document.getElementById('loadingArea').style.display = 'none';
-
-            if (res.ok) {
-                const { data, hora } = getDataHora();
-                document.getElementById('res-data').innerText = data;
-                document.getElementById('res-hora').innerText = hora;
-                document.getElementById('res-code').innerText = input;
-                document.getElementById('pdfLink').href = pdfUrl;
-                document.getElementById('resultArea').style.display = 'block';
-            } else {
-                document.getElementById('searchArea').style.display = 'block';
-                document.getElementById('errorArea').innerText = '⚠️ Documento em processamento. Tente novamente em alguns minutos.';
-                document.getElementById('errorArea').style.display = 'block';
-            }
-        } catch (e) {
-            document.getElementById('loadingArea').style.display = 'none';
-            document.getElementById('searchArea').style.display = 'block';
-            document.getElementById('errorArea').innerText = 'Erro de ligação. Verifique a sua internet.';
-            document.getElementById('errorArea').style.display = 'block';
+        if (check.ok) {
+            document.getElementById('searchArea').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('res-code').innerText = input;
+            pdfLink.href = url + "?v=" + new Date().getTime();
+            pdfLink.style.display = 'block';
+        } else {
+            errorArea.innerText = "Ficheiro não encontrado. Tente novamente em alguns minutos.";
+            errorArea.style.display = 'block';
         }
     }
 </script>
